@@ -71,7 +71,7 @@ class camera{
 
             //Calculate distance between pixels
             double uDist = (double)uLength/imageW;
-            double vDist = 2*((double)vLength/imageH);
+            double vDist = ((double)vLength/imageH);
 
                 std::clog << "uDist: " << uDist << ". vDist: " << vDist << std::endl;
             
@@ -79,7 +79,7 @@ class camera{
 
             for(int i = 0; i<imageH; i++){
                 for(int j = 0; j<imageW; j++){
-                    point3 newPoint = topLeft + ((0.5*uDist)*vpRight) + ((-0.5*vDist)*up) + (vpRight * (uLength*((double)j/imageW))) - (up*(vLength*((double)i/imageH)));
+                    point3 newPoint = topLeft + ((0.5*uDist)*vpRight) - ((0.5*vDist)*up) + (vpRight * (uLength*((double)j/imageW))) - (up*(vLength*((double)i/imageH)));
                     //point3 newPoint = topLeft + (vpRight * (uDist * j)) - (up * (vDist * i));
 
                     pixels[i*imageW + j] = newPoint;
