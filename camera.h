@@ -7,109 +7,166 @@ class camera{
 
     public:
         camera(){}
-        camera(const point3& origin, 
-               const vec3& forward, 
-               const vec3& up,
-               const int vpHeight, 
-               const int width, 
-               const double focalLength,
-               const double aspectRatio
-               ) 
-               : orig(origin), forward(forward), up(up), vpH(vpHeight), imageW(width), focalLength(focalLength), aspectRatio(aspectRatio)
-               {
-                     populatePixels();
-                }
+
+            // IMAGE
+            int imageW = 100;
+            double aspectRatio = 1;
+            int samples_per_pixel = 10; // Count of random samples for each pixel
+
+            // RENDER
+            void render (const hittable& world){
+                initialize();
+                populatePixels();
+                //double pixelsLength = pixels.size();
+                //std::clog << "pixel array length: " << pixelsLength << std::endl;
+                std::cout << "P3\n" << imageW << ' ' << pHeight << "\n255\n";
+                    for (int i = 0; i < pHeight; i++) {
+                        // std::clog << "\rScanlines remaining: " << (pHeight - j) << '\n' << std::flush;
+                        for (int j = 0; j < imageW; j++) {
+                            int index = j+(imageW*i);
+                            std::clog << "pixel: " << pixels[index] << std::endl;
+                            color pixel_color(0,0,0);
+                            for (int sample = 0; sample < samples_per_pixel; sample++){
+                                ray r = get_ray(j, i);
+                                pixel_color += ray_color(r, world);
+                            }
+                            std::clog << "pixel color: " << pixel_color << std::endl;
+                            write_color(std::cout, pixel_samples_scale * pixel_color);
+                           
+                        }
+                    }
+            }
+
+            int populatePixels(){
+
+                std::clog  << "imageH: " << imageH << " imageW: " << imageW << std::endl;
+                for(int i = 0; i<imageH; i++){
+                    for(int j = 0; j<imageW; j++){
+                        point3 newPoint = topLeft + ((0.5*uDist)*vpRight) - ((0.5*vDist)*up) + (vpRight * (uLength*((double)j/imageW))) - (up*(vLength*((double)i/imageH)));
+                        pixels[i*imageW + j] = newPoint;
+
+                        //std::clog << "point loc: " << newPoint << std::endl;
+                    
+                    }
+                }       
+                return 0;
+            };
+
+            // Getter for pixels
+            const std::vector<vec3>& getPixels() const {
+                return pixels;
+            }
 
 
-    //1. calculate the center of the viewport - simple
-    //2. find the up and right vector's corresponding to the camera origin, the viewport origin, and the forward vector
-    //3. using the height and width, map out the 4 corners of the viewport
-    //4. using the aspect ratio, 0,0 and 1,1 and the width/height determine how far apart each pixel is
-    //5. using this u and v number, and based on the orientation of the viewport, determine the location of each pixel
-    //6. add these pixels to the pixel array.
-    //7. cast rays from camera origin through these pixels
-    //8. return colors based on viewport pixel height and add these to image output
-    //9. integrate sphere so that if they hit the sphere return a color.
-            
+    private:
+        point3 center;
+        vec3 forward;
+        vec3 up;
+        double focalLength;
+        double pixel_samples_scale;
+        
+        double vpHeight;
+        double vpWidth;
+        int pHeight;
+        
+        double imageH;
+        point3 topLeft;
+        double uDist;
+        double vDist;
+        vec3 vpRight;
+        double uLength;
+        double vLength;
+        std::vector<vec3> pixels;
 
-        int populatePixels(){
-            int imageH = imageW/aspectRatio;
+        void initialize() {
+
+            //Camera attribs
+            pHeight = static_cast<int>(imageW /aspectRatio);
+            center = point3(0,0,0);
+            double focalLength = 1;
+            int vpHeight = 2;
+            double vpWidth = (double)vpHeight * ((double)imageW/pHeight);
+            vec3 forward = vec3(0,0,1);
+            up = vec3(0,1,0);
+            pixel_samples_scale = 1.0 / samples_per_pixel;
+
+
+            imageH = (double)imageW/aspectRatio;
             int pixelCount = (imageW*imageH);
             pixels.resize(pixelCount);
-            double vpW = (double)vpH * ((double)imageW/imageH);
+            
+            std::clog << "pHeight: " << pHeight << std::endl;
+            std::clog << "vpH: " << vpWidth << "imageW" << imageW << std::endl;
+            std::clog << "vpWidth: " << vpWidth << std::endl;
+            
 
             std::clog << "imageW: " << imageW << " imageH: " << imageH << std::endl;
-            std::clog << "vpW: " << vpW << " vpH: " << vpH << std::endl;
+            std::clog << "vpWidth: " << vpWidth << " vpHeight: " << vpHeight << std::endl;
             //Find VP origin & right vector
 
-            point3 vpOrigin = orig + (forward*focalLength);
-            point3 vpRight = cross(up, forward);
+            point3 vpOrigin = center + (forward*focalLength);
+             vpRight = cross(forward, up);
 
                 std::clog << "vporigin: " << vpOrigin << ". vpRight: " << vpRight;
             
             //Finding Top Middle and Bottom Middle Point of VP
-            point3 topMiddle = vpOrigin + ((0.5*vpH)*up);
-            point3 bottomMiddle =  vpOrigin - ((0.5*vpH)*up);
+            point3 topMiddle = vpOrigin + ((0.5*vpHeight)*up);
+            point3 bottomMiddle =  vpOrigin - ((0.5*vpHeight)*up);
 
                // std::cout << "topMiddle: " << topMiddle << ". bottomMiddle: " << bottomMiddle;
 
-            point3 topLeft = topMiddle - ((0.5*vpW)* vpRight);
-            point3 topRight = topMiddle + ((0.5*vpW)* vpRight);
+             topLeft = topMiddle - ((0.5*vpWidth)* vpRight);
+            point3 topRight = topMiddle + ((0.5*vpWidth)* vpRight);
             
-            point3 bottomLeft = bottomMiddle - ((0.5*vpW)* vpRight);
-            point3 bottomRight = bottomMiddle + ((0.5*vpW)* vpRight);
+            point3 bottomLeft = bottomMiddle - ((0.5*vpWidth)* vpRight);
+            point3 bottomRight = bottomMiddle + ((0.5*vpWidth)* vpRight);
 
                 std::clog << "topLeft: " << topLeft << ". topRight: " << topRight << std::endl;
                 std::clog << "bottomLeft: " << bottomLeft << ". bottomRight: " << bottomRight << std::endl;
 
             //Calculate distance along horizontal(u) and vertical(v) axes            
-            double uLength = (topLeft - topRight).length();
-            double vLength = (topLeft - bottomLeft).length();
+             uLength = (topLeft - topRight).length();
+             vLength = (topLeft - bottomLeft).length();
 
                std::clog << "uLength: " << uLength << ". vLength: " << vLength << '\n';
 
 
             //Calculate distance between pixels
-            double uDist = (double)uLength/imageW;
-            double vDist = ((double)vLength/imageH);
+             uDist = (double)uLength/imageW;
+             vDist = ((double)vLength/imageH);
 
-                std::clog << "uDist: " << uDist << ". vDist: " << vDist << std::endl;
+            std::clog << "uDist: " << uDist << ". vDist: " << vDist << std::endl;
+
             
-            //std::clog << "imageW " << imageW << " imageH " << imageH;
+        }
 
-            for(int i = 0; i<imageH; i++){
-                for(int j = 0; j<imageW; j++){
-                    point3 newPoint = topLeft + ((0.5*uDist)*vpRight) - ((0.5*vDist)*up) + (vpRight * (uLength*((double)j/imageW))) - (up*(vLength*((double)i/imageH)));
-                    //point3 newPoint = topLeft + (vpRight * (uDist * j)) - (up * (vDist * i));
+        ray get_ray(int j, int i) const {
+            // Constructs camera-orig to pixel ray + offset
+            auto offset = sample_square();
+            int index = j+(imageW*i);
+            auto pixelSample = pixels[index] + (offset.y() *(vDist*vpRight)) + ( offset.x() * (uDist*up));
+            auto rayDirection = pixelSample - center;
+            return ray(center, rayDirection);
 
-                    pixels[i*imageW + j] = newPoint;
-                   // std::clog << "new point " << newPoint << " addition to right: " << (vpRight * (uLength*((double)j/imageW))) << std::endl;
-                   // std::clog << (up*(vLength*((double)i/imageH))) << std::endl;
-
-                   // if(j == 0 ){
-                   // std::clog << newPoint << std::endl;
-                  //  }
-                }
-            }
-            
-            return 0;
-        };
-
-         // Getter for pixels
-        const std::vector<vec3>& getPixels() const {
-            return pixels;
         }
 
 
-    private:
-        point3 orig;
-        vec3 forward;
-        vec3 up;
-        double focalLength;
-        int vpH;
-        int imageW;
-        double aspectRatio;
-        std::vector<vec3> pixels;
+        vec3 sample_square() const {
+            // Returns the vector to a random point in the [-.5,-.5]-[+.5,+.5] unit square.
+            return vec3(random_double() - 0.5, random_double() - 0.5, 0);
+        }
+
+        color ray_color(const ray& r, const hittable& world) {
+            hit_record rec;
+            if (world.hit(r, interval(0, infinity), rec)) {
+                // std::clog << "hit!";
+                return 0.5 * (rec.normal + color(1,1,1));
+            }
+
+            vec3 unit_direction = unit_vector(r.direction());
+            auto a = 0.5*(unit_direction.y() + 1.0);
+            return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
+        }
         
 
 
