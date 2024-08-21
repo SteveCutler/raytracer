@@ -2,6 +2,7 @@
 #define VEC3_H
 
 #include "rtweekend.h"
+#include "color.h"
 
 class vec3 {
 public:
@@ -46,6 +47,14 @@ public:
 
     double length_squared() const {
         return e[0] * e[0] + e[1] * e[1] + e[2] * e[2];
+    }
+
+    static vec3 random() {
+        return vec3 (random_double(), random_double(), random_double());
+    }
+
+    static vec3 random(double min, double max) {
+        return vec3 (random_double(min, max), random_double(min, max), random_double(min, max));
     }
 
     vec3 normalize() const{
@@ -106,6 +115,27 @@ inline vec3 cross(const vec3& u, const vec3& v) {
 
 inline vec3 unit_vector(const vec3& v) {
     return v / v.length();
+}
+
+inline vec3 randomInUnitSphere() {
+    while (true){
+        auto p = vec3::random(-1,1);
+        if (p.length_squared() < 1)
+            return p;
+    }
+}
+
+inline vec3 randomUnitVector() {
+    return unit_vector(randomInUnitSphere());
+}
+
+inline vec3 randomOnHemisphere(const vec3& normal) {
+    vec3 onUnitSphere = randomUnitVector();
+    if(dot(onUnitSphere, normal) > 0.0) // in same hemisphere as normal
+        return onUnitSphere;
+    else{
+        return -onUnitSphere;
+    }
 }
 
 #endif
