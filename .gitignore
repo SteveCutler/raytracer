@@ -1,0 +1,24 @@
+# Build outputs
+/build/
+/build-*/
+/cmake-build-*/
+/main
+/raytracer
+*.o
+*.obj
+*.exe
+*.dSYM/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+
+# Generated renders; keep the existing learning-project sample
+*.ppm
+!/renders/a.ppm
+/render.png
+
+# OS and editor-local files
+.DS_Store
+._*
+.vscode/
+.idea/

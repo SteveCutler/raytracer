@@ -24,8 +24,6 @@ class camera{
                     for (int i = 0; i < pHeight; i++) {
                          std::clog << "\rScanlines remaining: " << (pHeight - i) << '\n' << std::flush;
                         for (int j = 0; j < imageW; j++) {
-                            int index = j+(imageW*i);
-                           // std::clog << "pixel: " << pixels[index] << std::endl;
                             color pixel_color(0,0,0);
                             for (int sample = 0; sample < samples_per_pixel; sample++){
                                 ray r = get_ray(j, i);
@@ -63,11 +61,8 @@ class camera{
         point3 center;
         vec3 forward;
         vec3 up;
-        double focalLength;
         double pixel_samples_scale;
         
-        double vpHeight;
-        double vpWidth;
         int pHeight;
         
         double imageH;
